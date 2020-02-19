@@ -23,12 +23,13 @@ function Send-EmailToNotifyError{
     param(
         [string] $loc1,
         [string] $EmailTo,
-        [string] $cc
+        [string] $cc,
+        [string] $SMTPServer,
+        [string] $SMTPPort
         )
     try{
         #Subject, Body and SMTP Details
-        $EmailTo = $EmailTo
-        $SMTPServer = "send.nhs.net"
+        $EmailTo
         $Subject = (Get-Date).ToString('MM-dd-yyyy hh:mm:ss') + " Alert: Mailbox Status failure !!"
 
         $StoredSMTPCredential = Get-StoredCredential -Target SMTPLogin -AsCredentialObject
@@ -60,7 +61,7 @@ function Send-EmailToNotifyError{
         if($cc){
             $mailmessage.CC.add($cc)
             }
-        $SMTPClient = New-Object Net.Mail.SmtpClient($SMTPServer,587)
+        $SMTPClient = New-Object Net.Mail.SmtpClient($SMTPServer,$SMTPPort)
         $SMTPClient.Credentials = New-Object System.Net.NetworkCredential("$SMTPAuthUsername", "$SMTPAuthPassword")
         $SMTPClient.Send($mailmessage)
         (Get-Date).ToString('MM-dd-yyyy hh:mm:ss') + " Email Send Successfully to " +$EmailTo | Add-Content $LogFilePath
@@ -89,7 +90,9 @@ function Get-MailboxDetail{
     PARAM(
         [string]$URL,
         [string]$EmailTo,
-        [string]$MailboxName
+        [string]$MailboxName,
+        [string] $SMTPServer,
+        [string] $SMTPPort
         )
     try{
         $StoredCredential = Get-StoredCredential -Target PowershellLogin
@@ -214,7 +217,7 @@ $fetchXml = @"
         if($tblrow.Name -eq $MailboxName){
             if(($tblrow.Incoming_Email_Status -eq "Failure") -or ($tblrow.Outgoing_Email_Status -eq "Failure") -or ($tblrow.Status_Code -eq "Inactive") -or ($tblrow.Mailbox_Status -eq "Not Run") -or ($tblrow.Mailbox_Status -eq "Failure") -or ($tblrow.Email_Router_Access_Approval -eq "Empty") -or ($tblrow.IsEmailAddressApprovedbyo365Admin -eq "No")){
                 (Get-Date).ToString('MM-dd-yyyy hh:mm:ss') + " Something went wrong in mailbox. Please Check your mail for more detailed error of mailbox " | Add-Content $LogFilePath
-                Send-EmailToNotifyError -loc1 $DataFilepath -EmailTo $EmailTo
+                Send-EmailToNotifyError -loc1 $DataFilepath -EmailTo $EmailTo -SMTPServer $SMTPServer -SMTPPort $SMTPPort
                 }
             else{
                 #send and receive email to mailbox in order to test functionality
@@ -233,7 +236,9 @@ function Get-EmailServerProfile{
     PARAM(
         [string]$ServerProfileName,
         [string]$URL,
-        [string]$EmailTo
+        [string]$EmailTo,
+        [string] $SMTPServer,
+        [string] $SMTPPort
         )
     try{
     $StoredCredential = Get-StoredCredential -Target PowershellLogin
@@ -277,7 +282,7 @@ $fetchXml = @"
         Write-Output "Email Server Profile is activated"
         (Get-Date).ToString('MM-dd-yyyy hh:mm:ss') + " Email Server Profile is Activated" | Add-Content $LogFilePath
         $MialboxName = Read-Host "Which Mailbox's status are you looking for?"
-        Get-MailboxDetail -MailboxName $MialboxName -URL $URL -EmailTo $EmailTo
+        Get-MailboxDetail -MailboxName $MialboxName -URL $URL -EmailTo $EmailTo -SMTPServer $SMTPServer -SMTPPort $SMTPPort
         }
 
     (Get-Date).ToString('MM-dd-yyyy hh:mm:ss') + " Function Get-EmailServerProfile run successfully"| Add-Content $LogFilePath
@@ -287,4 +292,5 @@ $fetchXml = @"
         "      " | Add-Content $LogFilePath
     }
 }
-    $URL = "https://chocoservicedev.crm11.dynamics.com"
+
+
