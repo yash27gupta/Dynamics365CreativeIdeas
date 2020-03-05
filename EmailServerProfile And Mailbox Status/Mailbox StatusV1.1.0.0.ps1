@@ -296,8 +296,7 @@ $fetchXml = @"
         "      " | Add-Content $LogFilePath
     }
 }
-$URL = "https://chocoservicedev.crm11.dynamics.com"
-Get-EmailServerProfile -ServerProfileName "Microsoft Exchange Online" -URL $URL -EmailTo "yash.gupta@soprasteria.com"
+
 
 #This function is used to test incoming and outgoing mail to and from Mailbox ID respectively.
 function Test-Mailbox{
